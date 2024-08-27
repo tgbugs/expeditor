@@ -36,6 +36,7 @@
          current-expeditor-history-whitespace-trim-enabled)
 
 (module+ configure
+  (module declare-preserve-for-embedding '#%kernel)
   (provide expeditor-set-syntax-color!
            expeditor-bind-key!
 
@@ -1480,8 +1481,11 @@
   (current-expeditor-reader
    (lambda (in) ((current-read-interaction) (object-name in) in)))
   (let ([lexer (or (info 'color-lexer #f)
-                   (and (collection-file? "racket-lexer.rkt" "syntax-color")
-                        (dynamic-require 'syntax-color/racket-lexer 'racket-lexer)))])
+                   (and
+                    (or
+                     (collection-file? "racket-lexer.rkt" "syntax-color")
+                     (eq? (object-name (current-module-name-resolver)) 'embedded-resolver))
+                    (dynamic-require 'syntax-color/racket-lexer 'racket-lexer)))])
     (current-expeditor-lexer lexer))
   (let ([pred (info 'drracket:submit-predicate #f)])
     (when pred
@@ -1496,7 +1500,9 @@
   (let* ([indent-range (info 'drracket:range-indentation #f)]
          [indent (or (info 'drracket:indentation #f)
                      (and (not indent-range)
-                          (collection-file? "racket-indentation.rkt" "syntax-color")
+                          (or
+                           (collection-file? "racket-indentation.rkt" "syntax-color")
+                           (eq? (object-name (current-module-name-resolver)) 'embedded-resolver))
                           (dynamic-require 'syntax-color/racket-indentation 'racket-amount-to-indent)))])
     (when (or indent indent-range)
       (current-expeditor-indenter
